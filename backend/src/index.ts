@@ -1,7 +1,8 @@
 import WebSocket, { WebSocketServer } from "ws";
 import http, { IncomingMessage, ServerResponse } from "http";
-import env from "dotenv";
-env.config();
+import * as dotenv from "dotenv";
+
+dotenv.config();
 
 const server = http.createServer(
   (req: IncomingMessage, res: ServerResponse) => {
@@ -22,57 +23,61 @@ interface Users {
 
 let all_sockets: Users[] = [];
 
-wss.on("connection", (ws) => {
+wss.on("connection", (ws: WebSocket) => {
   ws.on("error", console.error);
 
-  ws.on("message", (data) => {
-    const parsed_data = JSON.parse(data as unknown as string);
+  ws.on("message", (data: WebSocket.RawData) => {
+    try {
+      const parsed_data = JSON.parse(data.toString());
 
-    if (parsed_data.type === "join") {
-      all_sockets.push({
-        socket: ws,
-        room: parsed_data.payload.roomId,
-        username: parsed_data.payload.username || "Anonymous",
-      });
+      if (parsed_data.type === "join") {
+        all_sockets.push({
+          socket: ws,
+          room: parsed_data.payload.roomId,
+          username: parsed_data.payload.username || "Anonymous",
+        });
 
-      const roomUsers = all_sockets.filter(
-        (x) => x.room === parsed_data.payload.roomId
-      );
+        const roomUsers = all_sockets.filter(
+          (x) => x.room === parsed_data.payload.roomId
+        );
 
-      const userCountMessage = {
-        type: "userCount",
-        count: roomUsers.length,
-      };
-
-      roomUsers.forEach((user) => {
-        if (user.socket.readyState === WebSocket.OPEN) {
-          user.socket.send(JSON.stringify(userCountMessage));
-        }
-      });
-    }
-
-    if (parsed_data.type === "chat") {
-      const current_user = all_sockets.find((x) => x.socket === ws);
-
-      if (current_user) {
-        const messageObject = {
-          type: "message",
-          payload: {
-            id: Date.now().toString(),
-            user: current_user.username,
-            message: parsed_data.payload.message,
-            timestamp: new Date().toISOString(),
-          },
+        const userCountMessage = {
+          type: "userCount",
+          count: roomUsers.length,
         };
 
-        all_sockets
-          .filter((x) => x.room === current_user.room)
-          .forEach((x) => {
-            if (x.socket.readyState === WebSocket.OPEN) {
-              x.socket.send(JSON.stringify(messageObject));
-            }
-          });
+        roomUsers.forEach((user) => {
+          if (user.socket.readyState === WebSocket.OPEN) {
+            user.socket.send(JSON.stringify(userCountMessage));
+          }
+        });
       }
+
+      if (parsed_data.type === "chat") {
+        const current_user = all_sockets.find((x) => x.socket === ws);
+
+        if (current_user) {
+          const messageObject = {
+            type: "message",
+            payload: {
+              id: Date.now().toString(),
+              user: current_user.username,
+              message: parsed_data.payload.message,
+              timestamp: new Date().toISOString(),
+            },
+          };
+
+          all_sockets
+            .filter((x) => x.room === current_user.room)
+            .forEach((x) => {
+              if (x.socket.readyState === WebSocket.OPEN) {
+                x.socket.send(JSON.stringify(messageObject));
+              }
+            });
+        }
+      }
+    } catch (error) {
+      console.error("Error parsing WebSocket message:", error);
     }
   });
 
@@ -100,6 +105,6 @@ wss.on("connection", (ws) => {
   });
 });
 
-server.listen(PORT, () => {
+server.listen(Number(PORT), () => {
   console.log(`WebSocket server is listening on port ${PORT}`);
 });
