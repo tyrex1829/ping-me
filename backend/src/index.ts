@@ -1,6 +1,16 @@
 import WebSocket, { WebSocketServer } from "ws";
+import http from "http";
+import env from "dotenv";
+env.config();
 
-const wss = new WebSocketServer({ port: 8080 });
+const server = http.createServer((req, res) => {
+  res.writeHead(200);
+  res.end("WebSocket server is running");
+});
+
+const PORT = process.env.PORT || 8080;
+
+const wss = new WebSocketServer({ server });
 
 interface Users {
   socket: WebSocket;
@@ -86,4 +96,8 @@ wss.on("connection", (ws) => {
       });
     }
   });
+});
+
+server.listen(PORT, () => {
+  console.log(`WebSocket server is listening on port ${PORT}`);
 });
