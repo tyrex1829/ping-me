@@ -1,5 +1,5 @@
-import Ping from "@/components/Ping";
+import Landing from "@/components/Landing";
 
 export default function Home() {
-  return <Ping />;
+  return <Landing />;
 }

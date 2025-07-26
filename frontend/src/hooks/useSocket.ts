@@ -8,7 +8,6 @@ export default function useSocket() {
 
     ws.onopen = () => {
       console.log(`Connected`);
-      ws.send("Hello Server!");
     };
 
     ws.onmessage = (msg) => {
@@ -16,6 +15,7 @@ export default function useSocket() {
     };
 
     setSocket(ws);
+
     return () => ws.close();
   }, []);
 
