@@ -1,12 +1,14 @@
 import WebSocket, { WebSocketServer } from "ws";
-import http from "http";
+import http, { IncomingMessage, ServerResponse } from "http";
 import env from "dotenv";
 env.config();
 
-const server = http.createServer((req, res) => {
-  res.writeHead(200);
-  res.end("WebSocket server is running");
-});
+const server = http.createServer(
+  (req: IncomingMessage, res: ServerResponse) => {
+    res.writeHead(200);
+    res.end("WebSocket server is running");
+  }
+);
 
 const PORT = process.env.PORT || 8080;
 
